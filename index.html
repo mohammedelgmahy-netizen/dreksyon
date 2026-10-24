@@ -184,6 +184,17 @@ dialog::backdrop { background: rgba(10,16,24,.5) }
 tr.total td { font-weight: 700; border-top: 2px solid var(--line); background: var(--surface-2) }
 .login { max-width: 400px; margin: 8vh auto 0; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: grid; gap: 18px; box-shadow: var(--shadow) }
 .moregrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px }
+.blist { display: grid; gap: 8px; margin-top: 14px }
+.brow { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2) }
+.brow > div:first-child { min-width: 0 }
+.moregrid .sec { position: relative; display: grid; justify-items: center; gap: 8px; padding: 16px 6px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease }
+.moregrid .sec:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -10px var(--c) }
+.moregrid .sec .secico { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; color: #fff; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 80%, #fff), var(--c)); box-shadow: 0 6px 14px -8px var(--c) }
+.moregrid .sec .secico svg { width: 24px; height: 24px }
+.moregrid .sec[aria-current="page"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 9%, var(--surface)) }
+.dash-secs { margin-bottom: 4px }
+@media (min-width: 900px) { .dash-secs .moregrid { grid-template-columns: repeat(6, 1fr) } }
+@media (prefers-reduced-motion: reduce) { .moregrid .sec { transition: none } .moregrid .sec:hover { transform: none } }
 .moregrid button { display: grid; justify-items: center; gap: 6px; padding: 14px 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer }
 .moregrid button[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft) }
 .moregrid svg { width: 24px; height: 24px }
@@ -291,6 +302,7 @@ const ICONS = {
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  cloud: '<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5z"/><path d="M12 11v5M9.5 13.5L12 11l2.5 2.5"/>',
   xls: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9.5 12l4 5M13.5 12l-4 5"/>'
 };
 function svgIcon(inner, cls) { const sp = h("span", { class: cls || "", style: cls ? "" : "display:contents" }); sp.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + "</svg>"; return sp; }
@@ -301,9 +313,13 @@ function buildNav() {
     h("button", { class: "navbtn" + (n[2] ? " prim" : ""), "data-v": n[0], onclick: () => go(n[0]) }, svgIcon(ICONS[n[0]]), n[1], n[0] === "contracts" ? h("span", { class: "cnt", id: "lateCnt", hidden: true }) : null)),
     h("button", { class: "navbtn more prim", "data-v": "more", onclick: moreDialog }, svgIcon(ICONS.more), "المزيد"));
 }
-function moreDialog() {
-  openDialog("كل الأقسام", h("div", { class: "moregrid" }, NAV.filter(n => typeof n !== "string").map(n => h("button", { "aria-current": view === n[0] ? "page" : null, onclick: () => { dlg.close(); go(n[0]); } }, svgIcon(ICONS[n[0]]), n[1]))));
+const SEC = { dash: "#2F6FDB", stock: "#3949AB", buy: "#E08A1E", contracts: "#0E8F86", customers: "#8E44C9", payments: "#1F9D55", checks: "#D9544D", expenses: "#C2410C", reports: "#0891B2", calc: "#475569", settings: "#6B7280", cloud: "#0EA5E9" };
+function secTiles(close) {
+  const tile = (key, label, onclick, cur) => h("button", { class: "sec", style: "--c:" + SEC[key], "aria-current": cur ? "page" : null, onclick }, svgIcon(ICONS[key], "secico"), h("span", null, label));
+  return h("div", { class: "moregrid" }, ...NAV.filter(n => typeof n !== "string").map(n => tile(n[0], n[1], () => { if (close) dlg.close(); go(n[0]); }, view === n[0])),
+    tile("cloud", "نسخة على السحابة", () => { if (close) dlg.close(); cloudBackup(); }));
 }
+function moreDialog() { openDialog("كل الأقسام", secTiles(true)); }
 let toastT;
 function toast(msg) { document.querySelector(".toast")?.remove(); const t = h("div", { class: "toast", role: "status" }, msg); document.body.append(t); clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 2600); }
 async function copyText(text) {
@@ -312,7 +328,8 @@ async function copyText(text) {
 }
 
 // ---------- data store: Claude account db, Supabase, or this browser ----------
-const COLS = ["vehicles", "customers", "contracts", "payments", "expenses", "checks", "settings"];
+const COLS = ["vehicles", "customers", "contracts", "payments", "expenses", "checks", "settings", "backups"];
+const DATA_COLS = COLS.filter(c => c !== "backups");
 const data = Object.fromEntries(COLS.map(c => [c, []]));
 let db = null, sb = null, sbUser = "", backend = "local", mode = "loading";
 const LS = "fardi-store-v2", SBK = "fardi-supabase", SB_TABLE = "fardi_records";
@@ -418,6 +435,7 @@ function render() {
   if (mode === "login") { $("topbar").hidden = true; $("view").replaceChildren(...viewLogin()); return; }
   if (mode === "error") return;
   $("topbar").hidden = false;
+  maybeAutoBackup();
   if (mode === "loading" && view !== "calc") { $("view").replaceChildren(h("div", { class: "panel" }, h("div", { class: "empty" }, h("b", null, S().name), "جارٍ تحميل بيانات المعرض…"))); return; }
   const root = $("view"), keepFocus = document.activeElement && document.activeElement.id && root.contains(document.activeElement) ? document.activeElement.id : null;
   const selStart = keepFocus && document.activeElement.selectionStart;
@@ -457,6 +475,7 @@ function viewDash() {
 
   return [
     head(S().name, "نظرة على المعرض اليوم، " + fd(today) + "."),
+    h("section", { class: "dash-secs" }, secTiles(false)),
     loading(),
     hasDemo ? h("div", { class: "banner" }, h("span", null, "البرنامج فيه الآن بيانات تجريبية للتجربة فقط، عليها علامة «تجريبي»."), h("button", { class: "btn sm danger", onclick: clearDemoDialog }, "مسح البيانات التجريبية")) : null,
     h("div", { class: "kpis" },
@@ -812,7 +831,7 @@ const rowsVehicles = list => list.map(v => { const c = data.contracts.find(x => 
 const rowsExpenses = list => list.map(e => ({ "التاريخ": e.date, "البند": e.category, "البيان": e.note || "", "طريقة الدفع": e.method || "", "المبلغ": r0(e.amount) }));
 const rowsChecks = list => list.map(k => ({ "النوع": k.kind, "الرقم": k.number || "", "البنك": k.bank || "", "العميل": k.customerName || "", "المبلغ": r0(k.amount), "تاريخ الاستحقاق": k.dueDate || "", "الحالة": CHECK_ST[k.status]?.[0] || "", "ملاحظة": k.note || "" }));
 const rowsCustomers = () => data.customers.map(cu => { const cs = data.contracts.filter(c => c.customerId === cu.id).map(cstate); return { "الاسم": cu.name, "الهاتف": cu.phone || "", "الرقم القومي": cu.nationalId || "", "العنوان": cu.address || "", "الضامن": cu.guarantor || "", "هاتف الضامن": cu.guarantorPhone || "", "عدد العقود": cs.length, "المتبقي عليه": r0(cs.reduce((s, x) => s + x.remaining, 0)), "المتأخر": r0(cs.reduce((s, x) => s + x.overdue, 0)) }; });
-const xbtn = fn => h("button", { class: "btn ghost", onclick: fn, title: "تنزيل ملف Excel" }, svgIcon(ICONS.xls), "Excel");
+const xbtn = () => h("button", { class: "btn ghost", onclick: () => cloudBackup(), title: "حفظ نسخة من كل البيانات على السحابة" }, svgIcon(ICONS.cloud), "حفظ نسخة");
 
 // ---------- expenses ----------
 const EXP_CATS = ["إيجار المعرض", "مرتبات وعمولات", "كهرباء ومياه وإنترنت", "دعاية وإعلانات", "صيانة وتجهيز عربيات", "نقل وسحب", "ترخيص ونقل ملكية", "ضرائب ورسوم", "ضيافة ونثريات", "أخرى"];
@@ -1056,7 +1075,7 @@ function viewReports() {
 // ---------- settings & data ----------
 function viewSettings() {
   const st = S(), err = h("p", { class: "err" });
-  const counts = COLS.filter(c => c !== "settings").map(c => [c, data[c].length]);
+  const counts = DATA_COLS.filter(c => c !== "settings").map(c => [c, data[c].length]);
   const colAr = { vehicles: "مركبات", customers: "عملاء", contracts: "عقود", payments: "دفعات", expenses: "مصروفات", checks: "شيكات وكمبيالات" };
   const hasDemo = COLS.some(c => data[c].some(d => d.demo));
   const sbc = sbConfig();
@@ -1082,11 +1101,11 @@ function viewSettings() {
       h("section", { class: "panel" }, h("h2", null, "بياناتك"),
         h("div", { class: "info-grid" }, counts.map(([c, n]) => info(colAr[c], nf.format(n)))),
         h("div", { class: "acts-inline", style: "margin-top:14px;flex-wrap:wrap" },
-          h("button", { class: "btn ghost", onclick: () => exportXlsx("معرض-الفردي-كل-البيانات", [{ name: "العقود", rows: rowsContracts(data.contracts) }, { name: "الدفعات", rows: rowsPayments(data.payments) }, { name: "المركبات", rows: rowsVehicles(data.vehicles) }, { name: "العملاء", rows: rowsCustomers() }, { name: "المصروفات", rows: rowsExpenses(data.expenses) }, { name: "الشيكات", rows: rowsChecks(data.checks) }]) }, "تنزيل كل البيانات Excel"),
           h("button", { class: "btn ghost", onclick: downloadBackup }, "تنزيل نسخة احتياطية"),
           h("button", { class: "btn ghost", onclick: () => fileIn.click() }, "استرجاع نسخة احتياطية"), fileIn),
         h("p", { class: "note", style: "margin-top:10px" }, "النسخة الاحتياطية ملف واحد فيه كل البيانات، تقدر ترجعها هنا أو في نسخة البرنامج على GitHub."),
         hasDemo ? h("div", { class: "banner", style: "margin-top:12px" }, h("span", null, "فيه بيانات تجريبية."), h("button", { class: "btn sm danger", onclick: clearDemoDialog }, "مسح البيانات التجريبية")) : null),
+      cloudPanel(),
       h("section", { class: "panel" }, h("h2", null, "الربط بـ Supabase"),
         backend === "db" ? h("p", { class: "note" }, "أنت تستخدم البرنامج الآن من داخل Claude، وبياناتك محفوظة في حسابك. الربط بـ Supabase يعمل من نسخة البرنامج المرفوعة على GitHub Pages.") :
         backend === "sb" ? [h("p", { style: "margin:0 0 10px" }, pill("ok", "متصل"), " ", sbc ? sbc.url.replace(/^https?:\/\//, "") : ""),
@@ -1100,14 +1119,56 @@ function viewSettings() {
           h("p", { class: "note wide" }, "تجدهم في Supabase من Project Settings ← API. يُحفظان على هذا الجهاز فقط."))))
   ];
 }
+// ---------- cloud backups (saved in the same database: Claude account or Supabase) ----------
+const KEEP_BACKUPS = 30;
+function backupList() { return [...data.backups].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")); }
+async function cloudBackup(auto) {
+  if (backend === "local") { if (!auto) toast("النسخ على السحابة يشتغل لما تربط البرنامج بـ Supabase من الإعدادات"); return; }
+  if (!auto) toast("جارٍ حفظ نسخة على السحابة…");
+  const payload = Object.fromEntries(DATA_COLS.map(c => [c, data[c]]));
+  const counts = Object.fromEntries(DATA_COLS.filter(c => c !== "settings").map(c => [c, data[c].length]));
+  try {
+    await store.add("backups", { createdAt: new Date().toISOString(), auto: !!auto, counts, payload: JSON.stringify(payload) });
+    const old = backupList().slice(KEEP_BACKUPS); for (const b of old) await store.remove("backups", b.id);
+    if (!auto) toast("تم حفظ نسخة على السحابة ✓");
+  } catch (e) { if (!auto) toast("تعذر حفظ النسخة، تأكد من الإنترنت وحاول تاني"); }
+}
+let autoBackupDone = false;
+function maybeAutoBackup() {
+  if (autoBackupDone || (mode !== "db" && mode !== "sb")) return; autoBackupDone = true;
+  const last = backupList()[0];
+  if (!last || (last.createdAt || "").slice(0, 10) !== todayISO()) setTimeout(() => cloudBackup(true), 4000);
+}
+function restoreCloud(b) {
+  let src; try { src = JSON.parse(b.payload || "{}"); } catch { return toast("النسخة دي تالفة"); }
+  const items = []; DATA_COLS.forEach(c => (Array.isArray(src[c]) ? src[c] : []).forEach(d => { if (d && d.id) items.push([c, d]); }));
+  confirmDialog("ترجيع نسخة " + fdt(b.createdAt) + "؟", "هيرجع " + nf.format(items.length) + " سجل زي ما كانوا وقت النسخة. السجلات الموجودة بنفس الرقم هتتبدل، والجديد اللي اتضاف بعدها هيفضل.", async () => {
+    let i = 0; for (const [c, d] of items) { const { id, ...doc } = d; await store.set(c, String(id), doc); if (++i % 20 === 0) toast("تم " + nf.format(i) + " من " + nf.format(items.length)); }
+    applySettings(); toast("تم ترجيع النسخة ✓");
+  }, "نعم، رجّعها");
+}
+function fdt(iso) { try { return new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(iso)); } catch { return iso || ""; } }
+function cloudPanel() {
+  const list = backupList();
+  const sum = b => { const c = b.counts || {}; return nf.format(c.contracts || 0) + " عقد · " + nf.format(c.vehicles || 0) + " مركبة · " + nf.format(c.payments || 0) + " دفعة"; };
+  return h("section", { class: "panel" }, h("h2", null, "النسخ على السحابة"),
+    backend === "local" ? h("p", { class: "note" }, "اربط البرنامج بـ Supabase الأول، وبعدها كل نسخة هتتحفظ على السحابة.") : [
+      h("p", { class: "note", style: "margin:0 0 12px" }, "البرنامج بيحفظ نسخة كاملة تلقائيًا مرة كل يوم، وتقدر تحفظ نسخة بإيدك في أي وقت. آخر " + nf.format(KEEP_BACKUPS) + " نسخة بتفضل محفوظة."),
+      h("button", { class: "btn", onclick: () => cloudBackup() }, svgIcon(ICONS.cloud), "حفظ نسخة الآن"),
+      list.length ? h("div", { class: "blist" }, list.slice(0, 10).map(b => h("div", { class: "brow" },
+        h("div", null, h("b", null, fdt(b.createdAt)), " ", b.auto ? pill("mute", "تلقائي") : pill("ok", "يدوي"), h("div", { class: "note" }, sum(b))),
+        h("div", { class: "acts-inline" }, h("button", { class: "btn sm ghost", onclick: () => restoreCloud(b) }, "ترجيع"),
+          h("button", { class: "btn sm danger", onclick: () => confirmDialog("مسح النسخة دي؟", "النسخة هتتمسح من السحابة، وبياناتك الحالية مش هتتأثر.", () => store.remove("backups", b.id), "نعم، امسح") }, "مسح"))))) :
+        h("p", { class: "note", style: "margin-top:12px" }, "لسه مفيش نسخ محفوظة.")]);
+}
 function downloadBackup() {
-  const out = { app: "fardi-showroom", version: 2, exportedAt: new Date().toISOString(), data: Object.fromEntries(COLS.map(c => [c, data[c]])) };
+  const out = { app: "fardi-showroom", version: 2, exportedAt: new Date().toISOString(), data: Object.fromEntries(DATA_COLS.map(c => [c, data[c]])) };
   saveFile("نسخة-احتياطية-" + todayISO() + ".json", new Blob([JSON.stringify(out)], { type: "application/json" }));
 }
 async function importBackup(file) {
   let o; try { o = JSON.parse(await file.text()); } catch { return toast("الملف غير صالح"); }
   const src = o && o.data; if (!src) return toast("هذا ليس ملف نسخة احتياطية من البرنامج");
-  const items = []; COLS.forEach(c => (Array.isArray(src[c]) ? src[c] : []).forEach(d => { if (d && d.id) items.push([c, d]); }));
+  const items = []; DATA_COLS.forEach(c => (Array.isArray(src[c]) ? src[c] : []).forEach(d => { if (d && d.id) items.push([c, d]); }));
   confirmDialog("استرجاع " + nf.format(items.length) + " سجل؟", "السجلات الموجودة بنفس الرقم ستُستبدل، والباقي يُضاف.", async () => {
     let i = 0; for (const [c, d] of items) { const { id, ...doc } = d; await store.set(c, String(id), doc); if (++i % 20 === 0) toast("تم " + nf.format(i) + " من " + nf.format(items.length)); }
     applySettings(); toast("تم استرجاع النسخة الاحتياطية");
@@ -1168,7 +1229,7 @@ function viewLogin() {
 // ---------- dialogs ----------
 const dlg = $("dlg");
 function openDialog(title, body, foot) {
-  dlg.replaceChildren(h("div", { class: "dlg-h" }, h("h2", null, title), h("button", { class: "x", "aria-label": "إغلاق", onclick: () => dlg.close() }, "×")), h("div", { class: "dlg-b" }, body), foot ? h("div", { class: "dlg-f" }, foot) : null);
+  dlg.replaceChildren(h("div", { class: "dlg-h" }, h("h2", null, title), h("button", { class: "x", "aria-label": "إغلاق", onclick: () => dlg.close() }, "×")), ...[h("div", { class: "dlg-b" }, body), foot ? h("div", { class: "dlg-f" }, foot) : null].filter(Boolean));
   if (!dlg.open) { try { dlg.showModal(); } catch { dlg.setAttribute("open", ""); } }
 }
 function confirmDialog(title, text, action, label) {
