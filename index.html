@@ -426,7 +426,18 @@ const VIEWS = ["dash", "stock", "buy", "contracts", "customers", "payments", "ch
 let view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dash";
 let detailId = null;
 const ui = { expMonth: todayISO().slice(0, 7), expCat: "", chStatus: "held", chKind: "", chQ: "", repYear: todayISO().slice(0, 4), buyYear: todayISO().slice(0, 4), buyQ: "", stockBrand: "", stockStatus: "stock", stockType: "", stockQ: "", cStatus: "all", cQ: "", payMonth: todayISO().slice(0, 7), custQ: "" };
-function go(v, id) { view = v; detailId = id || null; try { history.replaceState(null, "", "#" + v); } catch {} render(); window.scrollTo(0, 0); }
+function go(v, id) {
+  const same = v === view && (id || null) === detailId;
+  view = v; detailId = id || null;
+  try { if (!same) history.pushState({ v, id: detailId }, "", "#" + v); } catch {}
+  render(); window.scrollTo(0, 0);
+}
+try { history.replaceState({ v: view, id: null }, "", "#" + view); } catch {}
+window.addEventListener("popstate", e => {
+  const s = e.state || {}, v = s.v || location.hash.slice(1);
+  view = VIEWS.includes(v) ? v : "dash"; detailId = s.id || null;
+  render(); window.scrollTo(0, 0);
+});
 
 function render() {
   document.querySelectorAll(".navbtn").forEach(b => { if (b.dataset.v === view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
