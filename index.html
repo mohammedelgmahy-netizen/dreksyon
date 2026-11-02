@@ -794,31 +794,14 @@ const row = (k, v) => h("div", null, h("dt", null, k), h("dd", null, v));
 const DEFAULTS = { name: "معرض السيارات", tagline: "للسيارات والمعدات", phone: "", address: "", currency: "ج.م", rate: 10, months: 24,
   reminder: "السلام عليكم أ/ {الاسم}\nنذكّرك بقسط {المركبة} بمبلغ {المبلغ} المستحق بتاريخ {التاريخ}.\nبرجاء السداد في أقرب وقت، وشكرًا لك.\n{المعرض} {هاتف_المعرض}" };
 const S = () => ({ ...DEFAULTS, ...((data.settings || []).find(x => x.id === "main") || {}) });
-// app name + icon on the home screen follow the showroom name from settings
+// page title follows the showroom name from settings
 let appIdName = null;
 function syncAppIdentity() {
-  const link = document.querySelector('link[rel="manifest"]');
-  if (!link) return;
   let name = ((data.settings || []).find(x => x.id === "main") || {}).name;
   try { if (name) localStorage.setItem("dreksyon-app-name", name); else name = localStorage.getItem("dreksyon-app-name"); } catch {}
   name = (name || "معرض السيارات").trim();
   if (name === appIdName) return;
   appIdName = name; document.title = name;
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement("canvas"); c.width = c.height = 512;
-    const x = c.getContext("2d"); x.drawImage(img, 0, 0, 512, 512);
-    let fs = 72; x.font = "800 " + fs + "px Cairo, system-ui, sans-serif";
-    while (x.measureText(name).width > 450 && fs > 28) { fs -= 2; x.font = "800 " + fs + "px Cairo, system-ui, sans-serif"; }
-    x.textAlign = "center"; x.direction = "rtl"; x.fillStyle = "#3fc6ea"; x.shadowColor = "rgba(63,198,234,.5)"; x.shadowBlur = 16;
-    x.fillText(name, 256, 448);
-    const icon = c.toDataURL("image/png"), base = new URL("./", location.href).href;
-    const m = { name, short_name: name, id: base, start_url: base, scope: base, display: "standalone", dir: "rtl", lang: "ar", background_color: "#0a0b0d", theme_color: "#0a0b0d",
-      icons: [{ src: icon, sizes: "512x512", type: "image/png" }, { src: new URL("logo-car.png", base).href, sizes: "512x512", type: "image/png" }] };
-    link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(m));
-    document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l => l.href = icon);
-  };
-  img.src = "logo-car.png";
 }
 function applySettings() {
   const s = S(); CUR = s.currency || "ج.م";
