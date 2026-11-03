@@ -481,7 +481,6 @@ function viewDash() {
 
   return [
     head(S().name, "نظرة على المعرض اليوم، " + fd(today) + "."),
-    h("section", { class: "dash-secs" }, secTiles(false)),
     loading(),
     hasDemo ? h("div", { class: "banner" }, h("span", null, "البرنامج فيه الآن بيانات تجريبية للتجربة فقط، عليها علامة «تجريبي»."), h("button", { class: "btn sm danger", onclick: clearDemoDialog }, "مسح البيانات التجريبية")) : null,
     h("div", { class: "kpis" },
