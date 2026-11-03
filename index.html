@@ -1087,6 +1087,47 @@ function viewReports() {
 }
 
 // ---------- settings & data ----------
+// sample data so a new showroom can try the program; every record carries demo: true and is removed by "مسح البيانات التجريبية"
+async function seedDemo() {
+  const now = new Date().toISOString(), T = todayISO(), D = { demo: true, createdAt: now };
+  const V = [
+    { type: "ملاكي", make: "تويوتا", model: "كورولا", year: "2022", color: "أبيض", plate: "س ط ر 4821", cost: 780000, extra: 15000, askPrice: 880000, p: -5 },
+    { type: "ملاكي", make: "هيونداي", model: "إلنترا", year: "2021", color: "فضي", plate: "ب ن ع 1932", cost: 640000, extra: 10000, askPrice: 720000, p: -4 },
+    { type: "ملاكي", make: "كيا", model: "سبورتاج", year: "2023", color: "أسود", plate: "ق ل م 7710", cost: 1150000, extra: 20000, askPrice: 1290000, p: -2 },
+    { type: "نقل", make: "ميتسوبيشي", model: "L200", year: "2020", color: "أبيض", plate: "ن ق ل 3055", cost: 820000, extra: 25000, askPrice: 930000, p: -1 },
+    { type: "ملاكي", make: "نيسان", model: "صني", year: "2022", color: "رمادي", plate: "ع ص د 6604", cost: 520000, extra: 8000, askPrice: 590000, p: -8 },
+    { type: "ملاكي", make: "شيفروليه", model: "أوبترا", year: "2021", color: "أحمر", plate: "م ج و 2210", cost: 430000, extra: 7000, askPrice: 495000, p: -9 },
+    { type: "ميكروباص", make: "تويوتا", model: "هايس", year: "2019", color: "أبيض", plate: "ر ك ب 9087", cost: 1300000, extra: 30000, askPrice: 1450000, p: -7 },
+    { type: "ملاكي", make: "مرسيدس", model: "C180", year: "2020", color: "أسود", plate: "ف خ م 1001", cost: 1900000, extra: 40000, askPrice: 2150000, p: -3 }];
+  const C = [
+    { name: "أحمد محمود السيد", phone: "01001234567", nationalId: "28901011234567", address: "المنصورة" },
+    { name: "محمد عبد الله حسن", phone: "01112345678", nationalId: "29203151234568", address: "طنطا" },
+    { name: "خالد إبراهيم علي", phone: "01223456789", nationalId: "28507201234569", address: "الزقازيق" },
+    { name: "سامي فتحي عبد الرحمن", phone: "01534567890", nationalId: "29111051234560", address: "بنها" }];
+  const vid = [], cid = [];
+  for (const v of V) { const { p, ...doc } = v; vid.push(await store.add("vehicles", { ...doc, purchaseDate: addMonths(T, p), supplier: "تاجر الجملة", payMethod: "نقدي", status: "stock", ...D })); }
+  for (const c of C) cid.push(await store.add("customers", { ...c, ...D }));
+  let no = nextReceiptNo();
+  // [vehicle, customer, price, down, months, start offset (months), installments paid]
+  const S = [[4, 0, 600000, 150000, 24, -7, 7], [5, 1, 505000, 100000, 18, -8, 6], [6, 2, 1480000, 400000, 36, -6, 6], [7, 3, 2150000, 2150000, 0, -2, 0]];
+  for (const [vi, ci, price, down, months, so, paid] of S) {
+    const v = V[vi], cu = C[ci], cost = v.cost + v.extra, rate = months ? 10 : 0, r = quote({ cost, price, down, months, rate });
+    const start = addMonths(T, so);
+    const doc = { customerId: cid[ci], customerName: cu.name, customerPhone: cu.phone, vehicleId: vid[vi], vehicleMake: v.make, vehicleLabel: vLabel(v) + " · " + v.plate, vehicleType: v.type,
+      cost, price, down, months, rate, start, monthly: Math.round(r.monthly * 100) / 100, totalInst: Math.round(r.totalInst * 100) / 100, instProfit: Math.round(r.instProfit), profit: Math.round(r.profit), notes: "", ...D };
+    const k = await store.add("contracts", doc);
+    await store.update("vehicles", vid[vi], { status: "sold" });
+    await store.add("payments", { contractId: k, customerName: cu.name, amount: down, date: months ? addMonths(start, -1) : start, method: "نقدي", kind: "down", no: no++, ...D });
+    for (let i = 0; i < paid; i++) {
+      const d = addMonths(start, i); if (d > T) break;
+      await store.add("payments", { contractId: k, customerName: cu.name, amount: doc.monthly, date: d, method: i % 3 ? "نقدي" : "تحويل", kind: "inst", no: no++, ...D });
+    }
+    if (ci === 2) for (let i = 0; i < 3; i++) await store.add("checks", { kind: "شيك", number: String(450120 + i), bank: "البنك الأهلي", amount: doc.monthly, issueDate: T, dueDate: addMonths(T, i + 1), contractId: k, customerId: cid[ci], customerName: cu.name, note: "", status: "held", ...D });
+  }
+  const E = [[EXP_CATS[0], 15000, 0], [EXP_CATS[1], 24000, 0], [EXP_CATS[2], 2300, 0], [EXP_CATS[4], 8500, -1], [EXP_CATS[0], 15000, -1], [EXP_CATS[1], 24000, -1], [EXP_CATS[3], 5000, -1]];
+  for (const [category, amount, m] of E) await store.add("expenses", { date: addMonths(T, m), category, amount, method: "نقدي", note: "", ...D });
+  toast("اتضافت بيانات تجريبية");
+}
 function viewSettings() {
   const st = S(), err = h("p", { class: "err" });
   const counts = DATA_COLS.filter(c => c !== "settings").map(c => [c, data[c].length]);
@@ -1118,7 +1159,8 @@ function viewSettings() {
           h("button", { class: "btn ghost", onclick: downloadBackup }, "تنزيل نسخة احتياطية"),
           h("button", { class: "btn ghost", onclick: () => fileIn.click() }, "استرجاع نسخة احتياطية"), fileIn),
         h("p", { class: "note", style: "margin-top:10px" }, "النسخة الاحتياطية ملف واحد فيه كل البيانات، تقدر ترجعها هنا أو في نسخة البرنامج على GitHub."),
-        hasDemo ? h("div", { class: "banner", style: "margin-top:12px" }, h("span", null, "فيه بيانات تجريبية."), h("button", { class: "btn sm danger", onclick: clearDemoDialog }, "مسح البيانات التجريبية")) : null),
+        hasDemo ? h("div", { class: "banner", style: "margin-top:12px" }, h("span", null, "فيه بيانات تجريبية."), h("button", { class: "btn sm danger", onclick: clearDemoDialog }, "مسح البيانات التجريبية")) :
+          h("div", { class: "acts-inline", style: "margin-top:12px" }, h("button", { class: "btn ghost", onclick: async e => { e.currentTarget.disabled = true; try { await seedDemo(); } catch { toast("تعذر إضافة البيانات، حاول مرة أخرى"); } } }, "إضافة بيانات تجريبية"))),
       cloudPanel(),
       backend === "sb" ? h("section", { class: "panel" }, h("h2", null, "الحساب"),
         h("p", { class: "note" }, "مسجل الدخول بـ " + (sbUser || "")),
