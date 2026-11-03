@@ -363,7 +363,9 @@ const store = {
 };
 function noteStore() { $("store-note").textContent = backend === "db" ? "البيانات محفوظة في حسابك وتظهر من أي جهاز." : backend === "sb" ? "متصل بـ Supabase · " + sbUser : "البيانات محفوظة على هذا الجهاز فقط."; }
 function useLocal() { db = null; backend = "local"; mode = "local"; lsLoad(); noteStore(); applySettings(); render(); }
-function sbConfig() { try { return JSON.parse(localStorage.getItem(SBK) || "null"); } catch { return null; } }
+// built-in project (publishable key is public by design; access is limited by row level security)
+const SB_DEFAULT = { url: "https://lhamdnaxioxqptkylvkg.supabase.co", key: "sb_publishable_X6F5g148JSlVUz5sy0XEcw_KGNK218S" };
+function sbConfig() { try { return JSON.parse(localStorage.getItem(SBK) || "null") || SB_DEFAULT; } catch { return SB_DEFAULT; } }
 async function sbStart(cfg) {
   try { await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"); }
   catch { toast("تعذر تحميل مكتبة Supabase، تأكد من الإنترنت"); return useLocal(); }
