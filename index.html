@@ -361,14 +361,14 @@ const store = {
     data[col] = data[col].filter(x => x.id !== id); lsSave(); scheduleRender();
   }
 };
-function noteStore() { $("store-note").textContent = backend === "db" ? "البيانات محفوظة في حسابك وتظهر من أي جهاز." : backend === "sb" ? "متصل بـ Supabase · " + sbUser : "البيانات محفوظة على هذا الجهاز فقط."; }
+function noteStore() { $("store-note").textContent = backend === "db" ? "البيانات محفوظة في حسابك وتظهر من أي جهاز." : backend === "sb" ? "متصل بالسحابة · " + sbUser : "البيانات محفوظة على هذا الجهاز فقط."; }
 function useLocal() { db = null; backend = "local"; mode = "local"; lsLoad(); noteStore(); applySettings(); render(); }
 // built-in project (publishable key is public by design; access is limited by row level security)
 const SB_DEFAULT = { url: "https://lhamdnaxioxqptkylvkg.supabase.co", key: "sb_publishable_X6F5g148JSlVUz5sy0XEcw_KGNK218S" };
-function sbConfig() { try { return JSON.parse(localStorage.getItem(SBK) || "null") || SB_DEFAULT; } catch { return SB_DEFAULT; } }
+function sbConfig() { return SB_DEFAULT; }
 async function sbStart(cfg) {
   try { await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"); }
-  catch { toast("تعذر تحميل مكتبة Supabase، تأكد من الإنترنت"); return useLocal(); }
+  catch { toast("تعذر الاتصال، تأكد من الإنترنت"); return useLocal(); }
   sb = window.supabase.createClient(cfg.url, cfg.key); backend = "sb";
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { mode = "login"; render(); return; }
@@ -382,7 +382,7 @@ async function sbAfterLogin() {
     for (let from = 0; ; from += 1000) { const r = sbCheck(await sb.from(SB_TABLE).select("col,id,data").range(from, from + 999)); all.push(...r.data); if (r.data.length < 1000) break; }
     COLS.forEach(c => data[c] = []); all.forEach(r => { if (data[r.col]) data[r.col].push({ id: r.id, ...r.data }); });
   } catch (e) {
-    mode = "error"; $("view").replaceChildren(h("div", { class: "panel" }, empty("تعذر قراءة البيانات من Supabase", "تأكد أنك نفذت ملف الإعداد (SQL) في مشروعك. " + (e.message || ""), h("button", { class: "btn ghost", onclick: () => location.reload() }, "إعادة المحاولة")))); return;
+    mode = "error"; $("view").replaceChildren(h("div", { class: "panel" }, empty("تعذر قراءة البيانات من السحابة", "تأكد أنك نفذت ملف الإعداد (SQL) في مشروعك. " + (e.message || ""), h("button", { class: "btn ghost", onclick: () => location.reload() }, "إعادة المحاولة")))); return;
   }
   mode = "sb"; noteStore(); applySettings(); render();
   sb.channel("fardi-live").on("postgres_changes", { event: "*", schema: "public", table: SB_TABLE }, pl => {
@@ -1129,24 +1129,16 @@ function viewSettings() {
         h("p", { class: "note", style: "margin-top:10px" }, "النسخة الاحتياطية ملف واحد فيه كل البيانات، تقدر ترجعها هنا أو في نسخة البرنامج على GitHub."),
         hasDemo ? h("div", { class: "banner", style: "margin-top:12px" }, h("span", null, "فيه بيانات تجريبية."), h("button", { class: "btn sm danger", onclick: clearDemoDialog }, "مسح البيانات التجريبية")) : null),
       cloudPanel(),
-      h("section", { class: "panel" }, h("h2", null, "الربط بـ Supabase"),
-        backend === "db" ? h("p", { class: "note" }, "أنت تستخدم البرنامج الآن من داخل Claude، وبياناتك محفوظة في حسابك. الربط بـ Supabase يعمل من نسخة البرنامج المرفوعة على GitHub Pages.") :
-        backend === "sb" ? [h("p", { style: "margin:0 0 10px" }, pill("ok", "متصل"), " ", sbc ? sbc.url.replace(/^https?:\/\//, "") : ""),
-          h("p", { class: "note" }, "مسجل الدخول بـ " + (sbUser || "")),
-          h("div", { class: "acts-inline", style: "margin-top:12px" }, h("button", { class: "btn ghost", onclick: async () => { await sb.auth.signOut(); location.reload(); } }, "تسجيل الخروج"),
-            h("button", { class: "btn danger", onclick: () => confirmDialog("إلغاء الربط بـ Supabase على هذا الجهاز؟", "بياناتك تبقى محفوظة في Supabase، ويمكنك الربط مرة أخرى في أي وقت.", async () => { try { localStorage.removeItem(SBK); } catch {} location.reload(); }, "نعم، إلغاء الربط") }, "إلغاء الربط"))] :
-        h("form", { id: "sbf", class: "fgrid", onsubmit: e => { e.preventDefault(); const url = val("sb-url").replace(/\/+$/, ""), key = val("sb-key"); if (!/^https:\/\/.+/.test(url) || key.length < 20) return toast("تأكد من الرابط والمفتاح"); try { localStorage.setItem(SBK, JSON.stringify({ url, key })); } catch {} location.reload(); } },
-          inp("sb-url", "Project URL", { placeholder: "https://xxxx.supabase.co", dir: "ltr" }, "wide"),
-          inp("sb-key", "anon public key", { placeholder: "eyJhbGciOi…", dir: "ltr" }, "wide"),
-          h("div", { class: "wide" }, h("button", { class: "btn", type: "submit" }, "ربط")),
-          h("p", { class: "note wide" }, "تجدهم في Supabase من Project Settings ← API. يُحفظان على هذا الجهاز فقط."))))
+      backend === "sb" ? h("section", { class: "panel" }, h("h2", null, "الحساب"),
+        h("p", { class: "note" }, "مسجل الدخول بـ " + (sbUser || "")),
+        h("div", { class: "acts-inline", style: "margin-top:12px" }, h("button", { class: "btn ghost", onclick: async () => { await sb.auth.signOut(); location.reload(); } }, "تسجيل الخروج"))) : null)
   ];
 }
 // ---------- cloud backups (saved in the same database: Claude account or Supabase) ----------
 const KEEP_BACKUPS = 30;
 function backupList() { return [...data.backups].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")); }
 async function cloudBackup(auto) {
-  if (backend === "local") { if (!auto) toast("النسخ على السحابة يشتغل لما تربط البرنامج بـ Supabase من الإعدادات"); return; }
+  if (backend === "local") { if (!auto) toast("النسخ على السحابة محتاج تسجيل دخول"); return; }
   if (!auto) toast("جارٍ حفظ نسخة على السحابة…");
   const payload = Object.fromEntries(DATA_COLS.map(c => [c, data[c]]));
   const counts = Object.fromEntries(DATA_COLS.filter(c => c !== "settings").map(c => [c, data[c].length]));
@@ -1175,7 +1167,7 @@ function cloudPanel() {
   const list = backupList();
   const sum = b => { const c = b.counts || {}; return nf.format(c.contracts || 0) + " عقد · " + nf.format(c.vehicles || 0) + " مركبة · " + nf.format(c.payments || 0) + " دفعة"; };
   return h("section", { class: "panel" }, h("h2", null, "النسخ على السحابة"),
-    backend === "local" ? h("p", { class: "note" }, "اربط البرنامج بـ Supabase الأول، وبعدها كل نسخة هتتحفظ على السحابة.") : [
+    backend === "local" ? h("p", { class: "note" }, "سجّل الدخول الأول، وبعدها كل نسخة هتتحفظ على السحابة.") : [
       h("p", { class: "note", style: "margin:0 0 12px" }, "البرنامج بيحفظ نسخة كاملة تلقائيًا مرة كل يوم، وتقدر تحفظ نسخة بإيدك في أي وقت. آخر " + nf.format(KEEP_BACKUPS) + " نسخة بتفضل محفوظة."),
       h("button", { class: "btn", onclick: () => cloudBackup() }, svgIcon(ICONS.cloud), "حفظ نسخة الآن"),
       list.length ? h("div", { class: "blist" }, list.slice(0, 10).map(b => h("div", { class: "brow" },
@@ -1246,7 +1238,7 @@ function viewLogin() {
       inp("lg-email", "الإيميل", { type: "email", dir: "ltr", autocomplete: "username", required: true }),
       inp("lg-pass", "كلمة السر", { type: "password", dir: "ltr", autocomplete: "current-password", required: true }),
       err, btn),
-    h("button", { class: "back", style: "font-size:13px", onclick: () => { try { localStorage.removeItem(SBK); } catch {} location.reload(); } }, "تغيير بيانات الربط"))];
+  )];
 }
 
 // ---------- dialogs ----------
