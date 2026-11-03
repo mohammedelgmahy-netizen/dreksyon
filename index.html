@@ -431,10 +431,11 @@ const ui = { expMonth: todayISO().slice(0, 7), expCat: "", chStatus: "held", chK
 function go(v, id) {
   const same = v === view && (id || null) === detailId;
   view = v; detailId = id || null;
-  try { if (!same) history.pushState({ v, id: detailId }, "", "#" + v); } catch {}
+  // one back swipe from any page returns home: home sits under at most one history entry
+  try { if (!same) { const onHome = !history.state || history.state.v === "dash"; if (onHome && v !== "dash") history.pushState({ v, id: detailId }, "", "#" + v); else if (!onHome && v === "dash") history.back(); else history.replaceState({ v, id: detailId }, "", "#" + v); } } catch {}
   render(); window.scrollTo(0, 0);
 }
-try { history.replaceState({ v: view, id: null }, "", "#" + view); } catch {}
+try { if (view === "dash") history.replaceState({ v: "dash", id: null }, "", "#dash"); else { history.replaceState({ v: "dash", id: null }, "", "#dash"); history.pushState({ v: view, id: null }, "", "#" + view); } } catch {}
 window.addEventListener("popstate", e => {
   const s = e.state || {}, v = s.v || location.hash.slice(1);
   view = VIEWS.includes(v) ? v : "dash"; detailId = s.id || null;
